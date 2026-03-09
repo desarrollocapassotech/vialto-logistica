@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas permisivas: lectura/escritura permitida sin autenticación.
+    // La validación de acceso se hace en la lógica de la aplicación.
+    // Nota: cualquiera con acceso a la consola de Firebase puede ver/modificar datos.
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

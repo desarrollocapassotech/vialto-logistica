@@ -409,7 +409,12 @@ const NewLoadForm = ({
       try {
         const qs = new URLSearchParams({ patente: plate });
         if (defaultValues?.id) qs.set("excludeId", defaultValues.id);
-        qs.set("fecha", formData.date.toISOString());
+        const y = formData.date.getFullYear();
+        const m = String(formData.date.getMonth() + 1).padStart(2, "0");
+        const d = String(formData.date.getDate()).padStart(2, "0");
+        const yyyymmdd = `${y}-${m}-${d}`;
+
+        qs.set("fecha", yyyymmdd);
 
         qs.set("_t", Date.now().toString());
 
@@ -530,10 +535,15 @@ const NewLoadForm = ({
         fotoTicketBlob = result.blob;
       }
 
+      const y = formData.date.getFullYear();
+      const m = String(formData.date.getMonth() + 1).padStart(2, "0");
+      const d = String(formData.date.getDate()).padStart(2, "0");
+      const yyyymmdd = `${y}-${m}-${d}`;
+
       await onSubmit({
         ...formData,
         licensePlate: parsePatente(formData.licensePlate),
-        date: formData.date.toISOString(),
+        date: yyyymmdd,
         liters: parseAmount(formData.liters),
         pricePerLiter: parseAmount(formData.pricePerLiter),
         totalAmount: parseAmount(formData.totalAmount),

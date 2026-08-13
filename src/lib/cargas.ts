@@ -43,6 +43,7 @@ export interface CargaPayload {
   // permite al backend resolver automáticamente el error que había quedado registrado para
   // este mismo intento (ver offlineSync.ts, syncOneLoad).
   localId?: string;
+  createdAt: string;
 }
 
 export async function uploadFoto(

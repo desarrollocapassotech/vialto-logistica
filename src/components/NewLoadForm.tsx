@@ -936,6 +936,36 @@ const NewLoadForm = ({
             </Sheet>
           </div>
 
+          {/* Fotos Obligatorias (VTO-44) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <PhotoUploader
+              label="Foto del Tacómetro"
+              previewUrl={fotoTacometroPreview}
+              onFileSelect={(file) => {
+                setFotoTacometroFile(file);
+                if (file) setFotoTacometroPreview(URL.createObjectURL(file));
+              }}
+              onClear={() => {
+                setFotoTacometroFile(null);
+                setFotoTacometroPreview(null);
+              }}
+              isReadOnly={!!defaultValues}
+            />
+            <PhotoUploader
+              label="Foto del Ticket"
+              previewUrl={fotoTicketPreview}
+              onFileSelect={(file) => {
+                setFotoTicketFile(file);
+                if (file) setFotoTicketPreview(URL.createObjectURL(file));
+              }}
+              onClear={() => {
+                setFotoTicketFile(null);
+                setFotoTicketPreview(null);
+              }}
+              isReadOnly={!!defaultValues}
+            />
+          </div>
+
           {/* Patente del vehículo - al final */}
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
@@ -1075,36 +1105,6 @@ const NewLoadForm = ({
                 {licensePlateError}
               </p>
             )}
-          </div>
-
-          {/* Fotos Obligatorias (VTO-44) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <PhotoUploader
-              label="Foto del Tacómetro"
-              previewUrl={fotoTacometroPreview}
-              onFileSelect={(file) => {
-                setFotoTacometroFile(file);
-                if (file) setFotoTacometroPreview(URL.createObjectURL(file));
-              }}
-              onClear={() => {
-                setFotoTacometroFile(null);
-                setFotoTacometroPreview(null);
-              }}
-              isReadOnly={!!defaultValues}
-            />
-            <PhotoUploader
-              label="Foto del Ticket"
-              previewUrl={fotoTicketPreview}
-              onFileSelect={(file) => {
-                setFotoTicketFile(file);
-                if (file) setFotoTicketPreview(URL.createObjectURL(file));
-              }}
-              onClear={() => {
-                setFotoTicketFile(null);
-                setFotoTicketPreview(null);
-              }}
-              isReadOnly={!!defaultValues}
-            />
           </div>
           </div>
 

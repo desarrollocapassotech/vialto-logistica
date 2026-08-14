@@ -7,8 +7,9 @@ import {
 } from "@/components/ui/dialog";
 import { apiJson, isNetworkError } from "@/lib/api";
 import { uploadFoto } from "@/lib/cargas";
+import { compressImage } from "@/lib/imageCompression";
 import { readLastKnownKm, writeLastKnownKm } from "@/lib/lastKnownKm";
-import { Camera, ImagePlus, Trash2 } from "lucide-react";
+import { Camera, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -157,22 +158,36 @@ const PhotoUploader = ({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isSourceSheetOpen, setIsSourceSheetOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        toast.error("La imagen debe ser JPG, PNG o WEBP");
-      } else if (file.size > 10 * 1024 * 1024) {
-        toast.error("La imagen no debe superar 10 MB");
-      } else {
-        onFileSelect(file);
-      }
-    }
     // Permite volver a elegir el mismo archivo dos veces seguidas: sin esto,
     // el navegador no dispara onChange si el path no cambió desde la
     // selección anterior.
     e.target.value = "";
+    if (!file) return;
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      toast.error("La imagen debe ser JPG, PNG o WEBP");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("La imagen no debe superar 10 MB");
+      return;
+    }
+
+    // Redimensiona/comprime antes de guardarla en el estado: una foto de
+    // cámara sin procesar puede pesar varios MB y, decodificada dos veces a
+    // la vez (tacómetro + ticket), agota la memoria del navegador en
+    // celulares con poca RAM.
+    setIsProcessing(true);
+    try {
+      const compressed = await compressImage(file);
+      onFileSelect(compressed);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -201,6 +216,11 @@ const PhotoUploader = ({
       ) : isReadOnly ? (
         <div className="rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center justify-center p-6 aspect-video text-gray-400 space-y-1">
           <span className="text-sm font-medium">Sin foto registrada</span>
+        </div>
+      ) : isProcessing ? (
+        <div className="rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center p-6 aspect-video bg-white text-gray-500 space-y-2">
+          <Loader2 className="h-8 w-8 text-[#E8470A] animate-spin" />
+          <span className="text-sm font-medium">Optimizando imagen...</span>
         </div>
       ) : (
         <button

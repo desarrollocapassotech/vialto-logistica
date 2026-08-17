@@ -82,12 +82,11 @@ async function withStore<T>(
 }
 
 export async function addPendingLoad(
-  data: Omit<PendingLoad, "localId" | "createdAt">,
+  data: Omit<PendingLoad, "localId">,
 ): Promise<PendingLoad> {
   const pendingLoad: PendingLoad = {
     ...data,
     localId: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
   };
   await withStore("readwrite", (store) => store.add(pendingLoad));
   return pendingLoad;

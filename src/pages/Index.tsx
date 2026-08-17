@@ -49,13 +49,28 @@ import { retryPendingLoad } from "@/lib/offlineSync";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { MonthFilterControl, currentMonthValue } from "@/components/MonthFilterControl";
 
+function parseIsoDateToLocal(isoString: string): Date {
+  if (!isoString) return new Date();
+  
+  // Extraemos año, mes y día explícitamente para evitar parseos UTC del navegador
+  const [y, m, d] = isoString.split("T")[0].split("-").map(Number);
+  
+  if (y && m && d) {
+    // Al usar new Date(año, mes, día), JS asume la zona horaria local.
+    // Esto es el estándar más limpio para construir una fecha sin arrastrar diferencias de UTC.
+    return new Date(y, m - 1, d);
+  }
+  
+  return new Date(isoString);
+}
+
 function mapCargaToLoadData(c: CargaApi): LoadData {
   return {
     id: c.id,
     driverName: c.chofer?.nombre ?? "",
     licensePlate: c.vehiculo?.patente ?? c.vehiculoId,
     driverDni: c.chofer?.dni ? Number(c.chofer.dni) : 0,
-    date: new Date(c.fecha),
+    date: parseIsoDateToLocal(c.fecha),
     // Nombres del modelo (LoadData)
     litros: c.litros,
     importe: c.importe,
@@ -81,7 +96,7 @@ function mapPendingToLoadData(p: PendingLoad): LoadData {
     driverName: p.driverName,
     licensePlate: p.payload.patente,
     driverDni: p.driverDni,
-    date: new Date(p.payload.fecha),
+    date: parseIsoDateToLocal(p.payload.fecha),
     liters: p.payload.litros,
     pricePerLiter: p.payload.precioPorLitro,
     totalAmount: p.payload.importe,
@@ -542,6 +557,7 @@ const Index = () => {
           fecha: data.date,
           fotoTacometro: data.fotoTacometro,
           fotoTicket: data.fotoTicket,
+          createdAt: new Date().toISOString(),
         };
         // Payload sin fotos, para IndexedDB — compartido con el alta offline.
         const {
@@ -618,6 +634,7 @@ const Index = () => {
 
             try {
               const pending = await addPendingLoad({
+                createdAt: apiPayload.createdAt,
                 driverDni: userDni,
                 driverName: data.driverName,
                 payload: pendingPayload,

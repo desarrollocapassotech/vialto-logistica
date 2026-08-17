@@ -44,9 +44,14 @@ async function recordSyncError(
 ): Promise<void> {
   await markPendingLoadError(pending.localId, message);
   try {
+    const payloadConLocalId = {
+      ...pending.payload,
+      localId: pending.localId,
+      createdAt: pending.createdAt,
+    };
     await reportSyncError(
       message,
-      { ...pending.payload, localId: pending.localId },
+      payloadConLocalId,
       getToken,
     );
   } catch (error) {
@@ -96,6 +101,7 @@ async function syncOneLoad(
     fotoTacometro,
     fotoTicket,
     localId: pending.localId,
+    createdAt: pending.createdAt,
   };
 
   const created = await createCarga(payload, getToken);

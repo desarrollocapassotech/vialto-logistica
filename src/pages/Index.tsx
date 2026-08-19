@@ -48,6 +48,12 @@ import {
 import { retryPendingLoad } from "@/lib/offlineSync";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { MonthFilterControl, currentMonthValue } from "@/components/MonthFilterControl";
+import { CombustiblesOrdenamientoMenu } from "@/components/CombustibleOrdenamientoMenu";
+import {
+  CombustibleSortField,
+  CombustibleSortDir,
+  COMBUSTIBLE_SORT_DEFAULT,
+} from "@/lib/combustibleOrdenamiento";
 
 function parseIsoDateToLocal(isoString: string): Date {
   if (!isoString) return new Date();
@@ -147,6 +153,12 @@ const Index = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthValue);
   const [formKey, setFormKey] = useState(0); // <-- ESTADO AGREGADO
   const [pendingLoads, setPendingLoads] = useState<PendingLoad[]>([]);
+  const [sortBy, setSortBy] = useState<CombustibleSortField>(
+    COMBUSTIBLE_SORT_DEFAULT.sortBy,
+  );
+  const [sortDir, setSortDir] = useState<CombustibleSortDir>(
+    COMBUSTIBLE_SORT_DEFAULT.sortDir,
+  );
   const navigate = useNavigate();
   const logoUrl = useEmpresaLogo(empresaId);
 
@@ -408,7 +420,7 @@ const Index = () => {
           }
           const getToken = async () => token;
           const data = await apiJson<{ cargas: CargaApi[]; count: number }>(
-            `/api/combustible/chofer/mis-cargas?month=${selectedMonth}`,
+            `/api/combustible/chofer/mis-cargas?month=${selectedMonth}&sortBy=${sortBy}&sortDir=${sortDir}`,
             getToken,
           );
           setLoads(data.cargas.map(mapCargaToLoadData));
@@ -437,7 +449,7 @@ const Index = () => {
     };
 
     if (userRole) fetchLoads();
-  }, [userRole, empresaId, selectedMonth, navigate]);
+  }, [userRole, empresaId, selectedMonth, navigate, sortBy, sortDir]);
 
   useEffect(() => {
     const fetchEmpresas = async () => {
@@ -523,9 +535,22 @@ const Index = () => {
     };
   }, [pendingDisplayLoads]);
 
-  // Cargas pendientes de sincronización primero, luego las ya sincronizadas.
-  const displayedLoads =
-    userRole === "CHOFER" ? [...pendingDisplayLoads, ...loads] : loads;
+  // Cargas pendientes de sincronización SIEMPRE primero y luego las sincronizadas
+  const displayedLoads = useMemo(() => {
+    const sortedLoads = [...loads].sort((a, b) => {
+      const dirMult = sortDir === "asc" ? 1 : -1;
+      if (sortBy === "fecha_carga") {
+        const dA = a.date.getTime();
+        const dB = b.date.getTime();
+        if (dA !== dB) return (dA - dB) * dirMult;
+      }
+      return 0; // Fallback al orden natural de la API
+    });
+
+    return userRole === "CHOFER"
+      ? [...pendingDisplayLoads, ...sortedLoads]
+      : sortedLoads;
+  }, [userRole, pendingDisplayLoads, loads, sortBy, sortDir]);
 
   // Filtrar las cargas según el término de búsqueda
   const filteredLoads = displayedLoads.filter((load) => {
@@ -948,14 +973,32 @@ const Index = () => {
                 Historial de Cargas
               </h2>
               {userRole === "CHOFER" && (
-                <div className="mb-4">
-                  <p className="mb-2 text-sm text-gray-500">
-                    Filtrar historial por mes
-                  </p>
-                  <MonthFilterControl
-                    value={selectedMonth}
-                    onChange={setSelectedMonth}
-                  />
+                <div className="mb-4 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between">
+                  <div className="w-full sm:w-auto">
+                    <p className="mb-2 text-sm text-gray-500">
+                      Filtrar historial por mes
+                    </p>
+                    <MonthFilterControl
+                      value={selectedMonth}
+                      onChange={setSelectedMonth}
+                    />
+                  </div>
+                  <div className="w-full sm:w-auto">
+                    <p className="mb-2 text-sm text-gray-500">
+                      Ordenar por
+                    </p>
+                    <div className="w-full sm:w-auto">
+                      <CombustiblesOrdenamientoMenu
+                        sortBy={sortBy}
+                        sortDir={sortDir}
+                        onChange={(b, d) => {
+                          setSortBy(b);
+                          setSortDir(d);
+                        }}
+                        disabled={isLoadsLoading}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
               {isLoadsLoading && (
